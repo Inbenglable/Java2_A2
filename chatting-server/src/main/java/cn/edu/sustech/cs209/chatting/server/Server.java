@@ -1,7 +1,6 @@
 package cn.edu.sustech.cs209.chatting.server;
 
 import cn.edu.sustech.cs209.chatting.common.User;
-
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -221,6 +220,8 @@ class Service implements Runnable {
                 Server.services.get(command[i]).sendGroupClose(command[1], userName);
               }
               break;
+            default:
+              System.out.println("Command Error");
           }
         }
       }

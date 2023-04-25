@@ -1,5 +1,12 @@
 package cn.edu.sustech.cs209.chatting.client;
 
+import java.io.*;
+import java.net.Socket;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.*;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -12,14 +19,6 @@ import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-
-import java.io.*;
-import java.net.Socket;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.*;
 
 public class Controller implements Initializable {
   HashMap<String, ChatRoom> privateChats = new HashMap<>();
@@ -285,7 +284,7 @@ public class Controller implements Initializable {
         break;
       }
     } catch (IOException e) {
-      Dialog<ButtonType> networkError = exceptionWindow.netWorkError();
+      Dialog<ButtonType> networkError = ExceptionWindow.netWorkError();
       networkError.showAndWait();
       Platform.exit();
       System.exit(0);
@@ -330,9 +329,6 @@ public class Controller implements Initializable {
     box.getChildren().addAll(userSel, okBtn);
     stage.setScene(new Scene(box));
     stage.showAndWait();
-
-    // TODO: if the current user already chatted with the selected user, just open the chat with that user
-    // TODO: otherwise, create a new chat item in the left panel, the title should be the selected user's name
   }
 
   public void createChatRoom(HashSet<String> anoUsers, String type, int groupChatId) {
@@ -369,16 +365,6 @@ public class Controller implements Initializable {
     }
   }
 
-  /**
-   * A new dialog should contain a multi-select list, showing all user's name.
-   * You can select several users that will be joined in the group chat, including yourself.
-   * <p>
-   * The naming rule for group chats is similar to WeChat:
-   * If there are > 3 users: display the first three usernames, sorted in lexicographic order, then use ellipsis with the number of users, for example:
-   * UserA, UserB, UserC... (10)
-   * If there are <= 3 users: do not display the ellipsis, for example:
-   * UserA, UserB (2)
-   */
   @FXML
   public void createGroupChat() {
     HashSet<String> joinUsers = new HashSet<>();
@@ -386,7 +372,6 @@ public class Controller implements Initializable {
     int checkBoxCnt = 0;
     Stage stage = new Stage();
     HBox box = new HBox(10);
-    // FIXME: get the user list from server, the current user's name should be filtered out
     for (String x : userList.getItems()) {
       if (!x.equals(username)) {
         box.getChildren().add(new CheckBox(x));

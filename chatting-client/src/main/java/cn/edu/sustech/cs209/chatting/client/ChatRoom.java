@@ -1,6 +1,13 @@
 package cn.edu.sustech.cs209.chatting.client;
 
 import cn.edu.sustech.cs209.chatting.common.Message;
+import java.io.*;
+import java.net.Socket;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.*;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -12,16 +19,8 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 
-import java.io.*;
-import java.net.Socket;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.*;
-
 public class ChatRoom implements Initializable {
-  private final Socket s;
+  private final Socket socket;
   private final Controller controller;
   public Stage stage;
   private final PrintWriter out;
@@ -30,16 +29,15 @@ public class ChatRoom implements Initializable {
   public HashSet<String> otherUsers;
   public int groupChatRoomId = -1;
 
-  public ChatRoom(Socket s, Controller controller, PrintWriter out, Stage stage, String userName, String type, HashSet<String> users) {
+  public ChatRoom(Socket socket, Controller controller, PrintWriter out, Stage stage, String userName, String type, HashSet<String> users) {
     this.controller = controller;
     this.stage = stage;
     this.out = out;
-    this.s = s;
+    this.socket = socket;
     this.userName = userName;
     this.type = type;
     otherUsers = users;
     otherUsers.remove(userName);
-//    System.setProperty("file.encoding","UTF-8");
   }
 
   public void setGroupChatRoomId(int x) {
@@ -57,7 +55,7 @@ public class ChatRoom implements Initializable {
     emoji4.setText("\uD83D\uDC97");
     emoji4.setOnAction(e -> doSendMessage("\uD83D\uDC97"));
     if (type.equals("Private")) {
-      SendFile.setOnAction(e -> sendFile());
+      sendFile.setOnAction(e -> sendFile());
     }
     currentUsername.setText(String.format("Current User: %s", userName));
     currentOnlineCnt.setText(String.format("Online: %d", otherUsers.size() + 1));
@@ -68,7 +66,7 @@ public class ChatRoom implements Initializable {
     chatList.getItems().add(userName);
     chatList.getItems().sort(String::compareTo);
     if (type.equals("Private")) {
-      ChatMenu.setText("Private Chat");
+      chatMenu.setText("Private Chat");
     } else {
       updateMenu();
     }
@@ -101,9 +99,9 @@ public class ChatRoom implements Initializable {
   }
 
   @FXML
-  Menu ChatMenu;
+  Menu chatMenu;
   @FXML
-  private Button SendFile;
+  private Button sendFile;
   @FXML
   private Button emoji1;
   @FXML
@@ -210,7 +208,7 @@ public class ChatRoom implements Initializable {
         out.flush();
         out.println(buffer.length);
         out.flush();
-        OutputStream outputStream = s.getOutputStream();
+        OutputStream outputStream = socket.getOutputStream();
         outputStream.write(buffer);
         outputStream.flush();
         out.println("@FileEnd");
@@ -305,7 +303,7 @@ public class ChatRoom implements Initializable {
     }
     String finalMenuTitle = menuTitle.toString();
     Platform.runLater(() -> {
-      ChatMenu.setText(finalMenuTitle);
+      chatMenu.setText(finalMenuTitle);
       currentOnlineCnt.setText(String.format("Online: %d", otherUsers.size() + 1));
     });
   }
