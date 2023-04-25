@@ -8,8 +8,6 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
-import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.Callback;
@@ -23,20 +21,18 @@ import java.nio.file.Paths;
 import java.util.*;
 
 public class ChatRoom implements Initializable {
-  private Socket s;
+  private final Socket s;
   private final Controller controller;
   public Stage stage;
-  private Scanner in;
   private final PrintWriter out;
   public String userName;
   public String type;
   public HashSet<String> otherUsers;
   public int groupChatRoomId = -1;
 
-  public ChatRoom(Socket s, Controller controller, Scanner in, PrintWriter out, Stage stage, String userName, String type, HashSet<String> users) {
+  public ChatRoom(Socket s, Controller controller, PrintWriter out, Stage stage, String userName, String type, HashSet<String> users) {
     this.controller = controller;
     this.stage = stage;
-    this.in = in;
     this.out = out;
     this.s = s;
     this.userName = userName;
@@ -77,31 +73,28 @@ public class ChatRoom implements Initializable {
       updateMenu();
     }
     send.setOnAction(e -> doSendMessage());
-    Platform.runLater(new Runnable() {
-      @Override
-      public void run() {
-        File readMsg = new File(userName);
-        if (type.equals("Private") && readMsg.exists() && readMsg.isDirectory()) {
-          try {
-            String talkTo = otherUsers.iterator().next();
-            InputStream is = Files.newInputStream(Paths.get(String.format("%s/%s.txt", userName, talkTo)));
-            BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
-            String temp = br.readLine();
-            if (temp != null && !temp.equals("")) {
-              controller.onlineUsers.put(talkTo, Long.parseLong(temp));
+    Platform.runLater(() -> {
+      File readMsg = new File(userName);
+      if (type.equals("Private") && readMsg.exists() && readMsg.isDirectory()) {
+        try {
+          String talkTo = otherUsers.iterator().next();
+          InputStream is = Files.newInputStream(Paths.get(String.format("%s/%s.txt", userName, talkTo)));
+          BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
+          String temp = br.readLine();
+          if (temp != null && !temp.equals("")) {
+            controller.onlineUsers.put(talkTo, Long.parseLong(temp));
+            temp = br.readLine();
+            while (temp != null && !temp.equals("")) {
+              String dataTemp = br.readLine().replace('^', '\n');
+              dataTemp = dataTemp.replaceAll("@1", "\uD83D\uDE00");
+              dataTemp = dataTemp.replaceAll("@2", "\uD83D\uDE04");
+              dataTemp = dataTemp.replaceAll("@3", "\uD83D\uDE0D");
+              dataTemp = dataTemp.replaceAll("@4", "\uD83D\uDC97");
+              chatContentList.getItems().add(new Message(0L, temp, dataTemp));
               temp = br.readLine();
-              while (temp != null && !temp.equals("")) {
-                String dataTemp = br.readLine().replace('^', '\n');
-                dataTemp = dataTemp.replaceAll("@1", "\uD83D\uDE00");
-                dataTemp = dataTemp.replaceAll("@2", "\uD83D\uDE04");
-                dataTemp = dataTemp.replaceAll("@3", "\uD83D\uDE0D");
-                dataTemp = dataTemp.replaceAll("@4", "\uD83D\uDC97");
-                chatContentList.getItems().add(new Message(0L, temp, dataTemp));
-                temp = br.readLine();
-              }
             }
-          } catch (IOException e) {
           }
+        } catch (IOException ignored) {
         }
       }
     });
@@ -131,10 +124,6 @@ public class ChatRoom implements Initializable {
   public TextArea inputArea;
   @FXML
   private Button send;
-  @FXML
-  private Font x3;
-  @FXML
-  private Color x4;
 
   @FXML
   void doSendMessage() {//ActionEvent event
@@ -209,12 +198,10 @@ public class ChatRoom implements Initializable {
         byte[] buffer = new byte[(int) fileSize];
 
         int offset = 0;
-        int numRead = 0;
+        int numRead;
         while (offset < buffer.length && (numRead = fi.read(buffer, offset, buffer.length - offset)) >= 0) {
           offset += numRead;
         }
-        String[] filePath = file.getPath().split("\\\\");
-        String fileName = filePath[filePath.length - 1];
         out.println("File");
         out.flush();
         out.println(file.getName());
@@ -261,7 +248,7 @@ public class ChatRoom implements Initializable {
       fw.close();
     } catch (IOException e) {
       System.out.println("Write MSG file wrong");
-    }catch (ConcurrentModificationException c){
+    } catch (ConcurrentModificationException c) {
       System.out.println("ConcurrentModificationException in saveMsg");
     }
   }
@@ -308,37 +295,31 @@ public class ChatRoom implements Initializable {
   }
 
   public void updateMenu() {
-    String menuTitle = "GroupChat: ";
+    StringBuilder menuTitle = new StringBuilder("GroupChat: ");
     Iterator<String> it = chatList.getItems().iterator();
     while (it.hasNext()) {
-      menuTitle += it.next();
+      menuTitle.append(it.next());
       if (it.hasNext()) {
-        menuTitle += ", ";
+        menuTitle.append(", ");
       }
     }
-    String finalMenuTitle = menuTitle;
-    Platform.runLater(new Runnable() {
-      @Override
-      public void run() {
-        ChatMenu.setText(finalMenuTitle);
-        currentOnlineCnt.setText(String.format("Online: %d", otherUsers.size() + 1));
-      }
+    String finalMenuTitle = menuTitle.toString();
+    Platform.runLater(() -> {
+      ChatMenu.setText(finalMenuTitle);
+      currentOnlineCnt.setText(String.format("Online: %d", otherUsers.size() + 1));
     });
   }
 
   public void deleteGroupUser(String deleteUser) {
-    Platform.runLater(new Runnable() {
-      @Override
-      public void run() {
-        chatList.getItems().remove(deleteUser);
-        otherUsers.remove(deleteUser);
-        updateMenu();
-        if (chatList.getItems().size() == 1) {
-          Dialog temp = new Alert(Alert.AlertType.INFORMATION);
-          temp.setHeaderText("No user");
-          temp.showAndWait();
-          stage.close();
-        }
+    Platform.runLater(() -> {
+      chatList.getItems().remove(deleteUser);
+      otherUsers.remove(deleteUser);
+      updateMenu();
+      if (chatList.getItems().size() == 1) {
+        Dialog<ButtonType> temp = new Alert(Alert.AlertType.INFORMATION);
+        temp.setHeaderText("No user");
+        temp.showAndWait();
+        stage.close();
       }
     });
 

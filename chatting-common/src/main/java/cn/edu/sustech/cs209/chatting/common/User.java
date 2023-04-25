@@ -1,8 +1,8 @@
 package cn.edu.sustech.cs209.chatting.common;
 
 public class User {
-  public String userName=null;
-  private String passWord="000000";
+  public String userName;
+  private final String passWord;
 
   public User(String userName, String passWord) {
     this.userName = userName;
@@ -11,10 +11,10 @@ public class User {
 
   @Override
   public boolean equals(Object obj) {
-    boolean temp=false;
-    if (obj!=null&&obj.getClass()== User.class){
-      if (((User) obj).userName.equals(userName)){
-        temp=true;
+    boolean temp = false;
+    if (obj != null && obj.getClass() == User.class) {
+      if (((User) obj).userName.equals(userName)) {
+        temp = true;
       }
     }
     return temp;
@@ -28,10 +28,6 @@ public class User {
   @Override
   public String toString() {
     return this.userName;
-  }
-
-  public String getUserName() {
-    return userName;
   }
 
   public String getPassWord() {
