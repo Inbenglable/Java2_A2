@@ -255,6 +255,8 @@ public class Controller implements Initializable {
                     public void run() {
                       if (privateChats.containsKey(anoUser)){
                         privateChats.get(anoUser).stage.show();
+                        privateChats.get(anoUser).stage.setAlwaysOnTop(true);
+                        privateChats.get(anoUser).stage.setAlwaysOnTop(false);
                         out.printf("askPrivateYes_%s\n", anoUser);
                         out.flush();
                       }

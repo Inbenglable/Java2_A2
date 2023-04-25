@@ -13,11 +13,9 @@ import javafx.scene.text.Font;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.Callback;
-
 import java.io.*;
 import java.net.Socket;
 import java.net.URL;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -68,6 +66,13 @@ public void setGroupChatRoomId(int x){
       chatList.getItems().add(x);
     }
     chatList.getItems().add(userName);
+    chatList.getItems().sort(String::compareTo);
+    if (type.equals("Private")){
+      ChatMenu.setText("Private Chat");
+    }
+    else {
+      updateMenu();
+    }
     send.setOnAction(e->doSendMessage());
     Platform.runLater(new Runnable() {
       @Override
@@ -100,6 +105,8 @@ public void setGroupChatRoomId(int x){
       }
     });
   }
+  @FXML
+  Menu ChatMenu;
   @FXML
   private Button SendFile;
   @FXML
@@ -257,6 +264,8 @@ public void setGroupChatRoomId(int x){
       @Override
       public void run() {
         stage.show();
+        stage.setAlwaysOnTop(true);
+        stage.setAlwaysOnTop(false);
         chatContentList.getItems().add(new Message(System.currentTimeMillis(),sender,newData));
       }
     });
@@ -289,12 +298,30 @@ public void setGroupChatRoomId(int x){
     if (type.equals("Private")){
     saveMsg();}
   }
+  public void updateMenu(){
+    String menuTitle="GroupChat: ";
+    Iterator<String> it=chatList.getItems().iterator();
+    while(it.hasNext()){
+      menuTitle+=it.next();
+      if (it.hasNext()){
+        menuTitle+=", ";
+      }
+    }
+    String finalMenuTitle = menuTitle;
+    Platform.runLater(new Runnable() {
+      @Override
+      public void run() {
+        ChatMenu.setText(finalMenuTitle);
+      }
+    });
+  }
   public void deleteGroupUser(String deleteUser){
     Platform.runLater(new Runnable() {
       @Override
       public void run() {
         chatList.getItems().remove(deleteUser);
         otherUsers.remove(deleteUser);
+        updateMenu();
         if (chatList.getItems().size()==1){
           Dialog temp=new Alert(Alert.AlertType.INFORMATION);
           temp.setHeaderText("No user");
