@@ -72,6 +72,7 @@ class Service implements Runnable {
   public Service(Socket s) {
     this.s = s;
     userName = String.valueOf(s.getRemoteSocketAddress());
+//    System.setProperty("file.encoding","UTF-8");
   }
 
   @Override
@@ -157,6 +158,39 @@ try{
         return;
       }
       String origin=in.nextLine();
+      if (origin.equals("File")){
+        String fileName=in.nextLine();
+        String fileUser=in.nextLine();
+        int bufferLength=Integer.parseInt(in.nextLine());
+        InputStream inputStream=s.getInputStream();
+        byte[] buffer=new byte[bufferLength];
+        inputStream.read(buffer);
+//        StringBuilder fileSb=new StringBuilder();
+//        String fileTemp;
+//        fileTemp=in.nextLine();
+//        while(!fileTemp.equals("@FileEnd")){
+//          fileSb.append(fileTemp);
+//          fileTemp=in.nextLine();
+//          if (!fileTemp.equals("@FileEnd")){
+//            fileSb.append('\n');
+//          }
+//        }
+        Service fileService=Server.services.get(fileUser);
+        OutputStream outputStream=fileService.s.getOutputStream();
+        fileService.out.println("File");
+        fileService.out.flush();
+        fileService.out.println(fileName);
+        fileService.out.flush();
+        fileService.out.println(bufferLength);
+        fileService.out.flush();
+//        fileService.out.println(fileSb);
+//        fileService.out.flush();
+        outputStream.write(buffer);
+        outputStream.flush();
+//        fileService.out.println("@FileEnd");
+//        fileService.out.flush();
+      }
+      else{
       String[] command = origin.split("_");
       if ("QUIT".equals(command[0])) {
         return;
@@ -202,6 +236,8 @@ try{
           for (int i=2;i<command.length;i++){
             Server.services.get(command[i]).sendGroupClose(command[1],userName);
           }
+          break;
+      }
       }
     }
   } catch (NoSuchElementException e) {

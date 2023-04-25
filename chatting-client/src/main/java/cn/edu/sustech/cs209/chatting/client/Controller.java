@@ -1,8 +1,6 @@
 package cn.edu.sustech.cs209.chatting.client;
 
-import cn.edu.sustech.cs209.chatting.common.Message;
 import javafx.application.Platform;
-import javafx.collections.transformation.SortedList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -18,6 +16,7 @@ import javafx.stage.Stage;
 import java.io.*;
 import java.net.Socket;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -40,6 +39,7 @@ public class Controller implements Initializable {
 
   @Override
   public void initialize(URL url, ResourceBundle resourceBundle) {
+    //System.setProperty("file.encoding","UTF-8");
     try {
       s = new Socket("localhost", 1234);
       while (true) {
@@ -151,10 +151,11 @@ public class Controller implements Initializable {
         Thread receiveCommand = new Thread(new Runnable() {
           @Override
           public void run() {
-            String[] command = new String[2];
+            String[] command;
+            String origin="";
             while (true) {
               if (in.hasNext()) {
-                command = in.nextLine().split("_");
+                origin=in.nextLine();
               } else {
                 Platform.runLater(new Runnable() {
                   @Override
@@ -168,6 +169,33 @@ public class Controller implements Initializable {
                 });
                 break;
               }
+              if (origin.equals("File")){
+                String fileName=in.nextLine();
+//                StringBuilder fileSb=new StringBuilder();
+                int fileLength=Integer.parseInt(in.nextLine());
+
+//                while(!fileTemp.equals("@FileEnd")){
+//                  fileSb.append(fileTemp);
+//                  fileTemp=in.nextLine();
+//                  if (!fileTemp.equals("@FileEnd")){
+//                    fileSb.append('\n');
+//                  }
+//                }
+                byte[] buffer=new byte[fileLength];
+                try {
+                  InputStream inputStream=s.getInputStream();
+                  inputStream.read(buffer);
+//                  String correct=new String(fileName.getBytes(), Charset.forName("GBK"));
+                  File file=new File(fileName);
+                  FileOutputStream fileOutputStream=new FileOutputStream(file);
+                  fileOutputStream.write(buffer);
+                  fileOutputStream.flush();
+                  fileOutputStream.close();
+                } catch (IOException e) {
+                  throw new RuntimeException(e);
+                }
+              } else{
+              command = origin.split("_");
               System.out.println(command[0]);
               HashSet<String> anoUsers = new HashSet<>();
               switch (command[0]) {
@@ -292,6 +320,7 @@ public class Controller implements Initializable {
                   System.out.println(username + " receive GroupClose");
                   groupChats.get(Integer.parseInt(command[1])).deleteGroupUser(command[2]);
                   break;
+              }
               }
             }
           }

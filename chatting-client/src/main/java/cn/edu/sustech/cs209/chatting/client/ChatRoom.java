@@ -17,13 +17,11 @@ import javafx.util.Callback;
 import java.io.*;
 import java.net.Socket;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.ResourceBundle;
-import java.util.Scanner;
+import java.util.*;
 
 public class ChatRoom implements Initializable {
   private Socket s;
@@ -45,6 +43,7 @@ public class ChatRoom implements Initializable {
     this.type = type;
     otherUsers = users;
     otherUsers.remove(userName);
+//    System.setProperty("file.encoding","UTF-8");
   }
 public void setGroupChatRoomId(int x){
     groupChatRoomId=x;
@@ -59,6 +58,9 @@ public void setGroupChatRoomId(int x){
     emoji3.setOnAction(e->doSendMessage("\uD83D\uDE0D"));
     emoji4.setText("\uD83D\uDC97");
     emoji4.setOnAction(e->doSendMessage("\uD83D\uDC97"));
+    if (type.equals("Private")){
+      SendFile.setOnAction(e->sendFile());
+    }
     currentUsername.setText(String.format("Current User: %s",userName));
     currentOnlineCnt.setText(String.format("Online: %d",otherUsers.size()+1));
     chatContentList.setCellFactory(new MessageCellFactory());
@@ -189,20 +191,35 @@ public void setGroupChatRoomId(int x){
   private void sendFile() {
     FileChooser fileChooser=new FileChooser();
     File file=fileChooser.showOpenDialog(new Stage());
-    try(FileInputStream fi = new FileInputStream(file)){
-      int fileSize= (int) file.length();
-      byte[] buffer = new byte[(int) fileSize];
+    if (file!=null&&file.exists()&&file.isFile()) {
+      try (FileInputStream fi = new FileInputStream(file)) {
+        int fileSize = (int) file.length();
+        byte[] buffer = new byte[(int) fileSize];
 
-      int offset = 0;
-      int numRead = 0;
-      while (offset < buffer.length && (numRead = fi.read(buffer, offset, buffer.length - offset)) >= 0) {
-        offset += numRead;
+        int offset = 0;
+        int numRead = 0;
+        while (offset < buffer.length && (numRead = fi.read(buffer, offset, buffer.length - offset)) >= 0) {
+          offset += numRead;
+        }
+       String []filePath=file.getPath().split("\\\\");
+        String fileName=filePath[filePath.length-1];
+        out.println("File");
+        out.flush();
+        out.println(file.getName());
+        out.flush();
+        out.println(otherUsers.iterator().next());
+        out.flush();
+        out.println(buffer.length);
+        out.flush();
+        OutputStream outputStream=s.getOutputStream();
+        outputStream.write(buffer);
+        outputStream.flush();
+        out.println("@FileEnd");
+        out.flush();
+      } catch (IOException e) {
+        throw new RuntimeException(e);
       }
-
-    } catch (IOException e) {
-      throw new RuntimeException(e);
     }
-
   }
   private void saveMsg() {
 
